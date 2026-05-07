@@ -40,7 +40,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")  // Nur Admins duerfen erstellen
+    @PreAuthorize("hasRole('ADMIN')")  // Nur Admins dürfen erstellen
     @Operation(summary = "Neue Kategorie anlegen (ADMIN)")
     public ResponseEntity<Category> create(@Valid @RequestBody Category category) {
         Category saved = categoryRepo.save(category);

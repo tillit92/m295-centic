@@ -31,9 +31,7 @@ public class DashboardController {
         this.userResolver = userResolver;
     }
 
-    /**
-     * Gesamtsaldo = Summe INCOME - Summe EXPENSE
-     */
+    // Gesamtsaldo = Summe INCOME - Summe EXPENSE
     @GetMapping("/summary")
     @Operation(summary = "Gesamtsaldo und Einnahmen/Ausgaben-Summen")
     public Map<String, Object> getSummary() {
@@ -49,9 +47,7 @@ public class DashboardController {
         return summary;
     }
 
-    /**
-     * Ausgaben pro Monat (gruppiert)
-     */
+    // Ausgaben pro Monat (gruppiert)
     @GetMapping("/monthly")
     @Operation(summary = "Ausgaben und Einnahmen pro Monat")
     public Map<String, Object> getMonthlySummary(@RequestParam(defaultValue = "6") int months) {
@@ -62,7 +58,7 @@ public class DashboardController {
         Map<String, BigDecimal> incomeByMonth = new TreeMap<>();
         Map<String, BigDecimal> expenseByMonth = new TreeMap<>();
 
-        // Die letzten N Monate initialisieren
+        // Die letzten Monate initialisieren
         YearMonth current = YearMonth.now();
         for (int i = 0; i < months; i++) {
             String key = current.minusMonths(i).format(fmt);
@@ -85,9 +81,7 @@ public class DashboardController {
         return result;
     }
 
-    /**
-     * Ausgaben pro Kategorie (aktueller Monat)
-     */
+    // Ausgaben pro Kategorie (aktueller Monat)
     @GetMapping("/category-stats")
     @Operation(summary = "Ausgaben pro Kategorie im aktuellen Monat")
     public Map<String, BigDecimal> getCategoryStats() {
@@ -104,9 +98,7 @@ public class DashboardController {
                 ));
     }
 
-    /**
-     * Budget-Warnungen (wie in BudgetController, hier als Dashboard-Einstiegspunkt)
-     */
+    // Budget-Warnungen
     @GetMapping("/budget-alerts")
     @Operation(summary = "Aktuelle Budget-Ueberschreitungen")
     public List<String> getBudgetAlerts() {

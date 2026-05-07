@@ -20,7 +20,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/budgets")
-@Tag(name = "Budgets", description = "Monatliche Budgetlimits setzen (ROLE_USER)")
+@Tag(name = "Budgets", description = "Monatliche Budgetlimits setzen (User)")
 @SecurityRequirement(name = "bearerAuth")
 public class BudgetController {
 
@@ -80,10 +80,7 @@ public class BudgetController {
                 .orElse(ResponseEntity.<Void>notFound().build());
     }
 
-    /**
-     * Prueft fuer alle Budgets des aktuellen Monats, ob das Limit ueberschritten wurde.
-     * Gibt eine Liste von Warnungen zurueck.
-     */
+    // Prüft für Budgets des Monats ob das Limit überschritten wurde oder nicht
     @GetMapping("/check")
     @Operation(summary = "Pruefe ob Budget-Limits ueberschritten wurden")
     public List<Map<String, Object>> checkBudgets() {
@@ -94,7 +91,7 @@ public class BudgetController {
         List<Map<String, Object>> alerts = new ArrayList<>();
 
         for (Budget budget : budgets) {
-            // Summe der Ausgaben fuer diese Kategorie im aktuellen Monat
+            // Summe der Ausgaben für diese Kategorie im aktuellen Monat
             BigDecimal spent = transactionRepo.findByUserId(me.getId()).stream()
                     .filter(t -> t.getCategory() != null
                             && t.getCategory().getId().equals(budget.getCategory().getId())

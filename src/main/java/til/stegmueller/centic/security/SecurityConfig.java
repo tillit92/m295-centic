@@ -24,7 +24,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Kein Session-State noetig (JWT ist stateless)
+                // Kein Session-State nötig (JWT ist stateless)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // CSRF deaktivieren (REST-API, kein Browser-State)
@@ -41,7 +41,7 @@ public class SecurityConfig {
 
                         // Kategorien lesen: alle authentifizierten Nutzer
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").hasAnyRole("USER", "ADMIN")
-                        // Kategorien aendern/loeschen: nur Admin
+                        // Kategorien ändern/löschen: nur Admin
                         .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
