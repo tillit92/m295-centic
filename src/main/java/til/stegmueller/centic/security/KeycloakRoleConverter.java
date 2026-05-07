@@ -15,17 +15,18 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
     @Override
     @SuppressWarnings("unchecked")
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
+        // resource_access.centic.roles lesen
+        Map<String, Object> resourceAccess = (Map<String, Object>) jwt.getClaims().get("resource_access");
 
-        if (realmAccess == null || !realmAccess.containsKey("roles")) {
+        if (resourceAccess == null || !resourceAccess.containsKey("centic")) {
             return Collections.emptyList();
         }
 
-        List<String> roles = (List<String>) realmAccess.get("roles");
+        Map<String, Object> centic = (Map<String, Object>) resourceAccess.get("centic");
+        List<String> roles = (List<String>) centic.get("roles");
 
         return roles.stream()
-                // Nur Rollen mit ROLE_-Prefix behalten (Keycloak-Defaults wie "offline_access" ignorieren)
-                .filter(role -> role.startsWith("ROLE_"))
+                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
