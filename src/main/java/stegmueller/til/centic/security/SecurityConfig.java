@@ -32,7 +32,7 @@ public class SecurityConfig {
 
                 // Endpunkt-Berechtigungen
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger / OpenAPI ohne Auth zugaenglich
+                        // Swagger / OpenAPI ohne Auth zugänglich
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

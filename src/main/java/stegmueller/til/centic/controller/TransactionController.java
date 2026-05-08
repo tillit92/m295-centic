@@ -60,7 +60,7 @@ public class TransactionController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Transaktion loeschen")
+    @Operation(summary = "Transaktion löschen")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         User me = userResolver.getCurrentUser();
         transactionService.delete(id, me);

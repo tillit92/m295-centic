@@ -1,6 +1,8 @@
 package stegmueller.til.centic.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.math.BigDecimal;
 
@@ -9,6 +11,9 @@ import java.math.BigDecimal;
 public class Budget {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotNull
+    @DecimalMin("0.00")
     private BigDecimal limitAmount;
 
     @Column(name = "`month`")
