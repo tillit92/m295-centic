@@ -50,9 +50,9 @@ public class DashboardService {
         for (Transaction t : all) {
             String monthKey = t.getDate().format(fmt);
             if (t.getType() == TransactionType.INCOME) {
-                incomeByMonth.computeIfPresent(monthKey, (k, v) -> v.add(t.getAmount()));
+                incomeByMonth.computeIfPresent(monthKey, (_, v) -> v.add(t.getAmount()));
             } else {
-                expenseByMonth.computeIfPresent(monthKey, (k, v) -> v.add(t.getAmount()));
+                expenseByMonth.computeIfPresent(monthKey, (_, v) -> v.add(t.getAmount()));
             }
         }
 

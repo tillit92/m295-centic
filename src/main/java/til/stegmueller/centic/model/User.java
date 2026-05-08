@@ -12,5 +12,6 @@ public class User {
     private Long id;
     private String username;
     private String email;
+    @Column(unique = true, nullable = false)
     private String keycloakId;
 }

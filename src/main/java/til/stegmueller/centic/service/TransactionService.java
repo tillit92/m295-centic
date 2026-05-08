@@ -1,8 +1,10 @@
 package til.stegmueller.centic.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import til.stegmueller.centic.model.Transaction;
 import til.stegmueller.centic.model.TransactionType;
 import til.stegmueller.centic.model.User;
@@ -10,7 +12,6 @@ import til.stegmueller.centic.repository.TransactionRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class TransactionService {
     public Transaction getByIdForUser(Long id, User user) {
         return transactionRepo.findById(id)
                 .filter(t -> t.getUser().getId().equals(user.getId()))
-                .orElseThrow(() -> new NoSuchElementException("Transaktion nicht gefunden: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaktion nicht gefunden: " + id));
     }
 
     @Transactional
