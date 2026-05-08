@@ -20,7 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/budgets")
 @RequiredArgsConstructor
-@Tag(name = "Budgets", description = "Monatliche Budgetlimits setzen")
+@Tag(name = "Budgets", description = "Verwaltung der monatlichen Budgetlimits pro Kategorie")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasRole('USER')")
 public class BudgetController {
@@ -29,14 +29,23 @@ public class BudgetController {
     private final CurrentUserResolver userResolver;
 
     @GetMapping
-    @Operation(summary = "Alle eigenen Budgets laden")
+    @Operation(
+            summary = "Alle eigenen Budgets laden",
+            description = "Gibt eine Liste aller Budgets zurück, die der aktuell angemeldete Benutzer erstellt hat."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Budgets erfolgreich geladen")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     public List<Budget> getAll() {
         return budgetService.getAllForUser(userResolver.getCurrentUser());
     }
 
     @PostMapping
     @Operation(summary = "Budget für Kategorie + Monat setzen")
-    public ResponseEntity<Budget> create(@Valid @RequestBody Budget budget) {
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Budget erfolgreich erstellt")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validierungsfehler in den Eingabedaten")
+    public ResponseEntity<Budget> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Das zu erstellende Budget-Objekt")
+            @Valid @RequestBody Budget budget) {
         User me = userResolver.getCurrentUser();
         Budget saved = budgetService.create(budget, me);
         return ResponseEntity
@@ -46,21 +55,33 @@ public class BudgetController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Budget-Limit ändern")
-    public ResponseEntity<Budget> update(@PathVariable Long id,
-                                         @Valid @RequestBody Budget updated) {
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Budget erfolgreich aktualisiert")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Budget mit dieser ID nicht gefunden")
+    public ResponseEntity<Budget> update(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Eindeutige ID des Budgets", example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody Budget updated) {
         User me = userResolver.getCurrentUser();
         return ResponseEntity.ok(budgetService.updateLimit(id, updated, me));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Budget löschen")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Budget erfolgreich gelöscht")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Zugriff verweigert (gehört nicht dem User)")
+    public ResponseEntity<Void> delete(
+            @io.swagger.v3.oas.annotations.Parameter(description = "ID des zu löschenden Budgets")
+            @PathVariable Long id) {
         budgetService.delete(id, userResolver.getCurrentUser());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/check")
-    @Operation(summary = "Prüfe ob Budget-Limits überschritten wurden")
+    @Operation(
+            summary = "Prüfe Budget-Überschreitungen",
+            description = "Vergleicht die Ausgaben des aktuellen Monats mit den gesetzten Limits."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Analyse erfolgreich durchgeführt")
     public List<Map<String, Object>> checkBudgets() {
         return budgetService.checkBudgetAlerts(userResolver.getCurrentUser());
     }
