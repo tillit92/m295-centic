@@ -10,6 +10,8 @@ public class Budget {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private BigDecimal limitAmount;
+
+    @Column(name = "`month`")
     private String month;   // Format "2024-05"
 
     @ManyToOne @JoinColumn(name = "user_id")
