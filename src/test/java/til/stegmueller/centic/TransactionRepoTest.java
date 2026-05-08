@@ -65,7 +65,7 @@ class TransactionRepoTest {
         List<Transaction> result = transactionRepository.findByUserId(user.getId());
 
         Assertions.assertFalse(result.isEmpty());
-        Assertions.assertEquals(user.getId(), result.get(0).getUser().getId());
+        Assertions.assertEquals(user.getId(), result.getFirst().getUser().getId());
     }
 
     @Test

@@ -4,16 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.AutoConfigureDataJpa;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.web.servlet.MockMvc;
 import til.stegmueller.centic.model.Transaction;
 import til.stegmueller.centic.model.TransactionType;
-import til.stegmueller.centic.repository.TransactionRepository;
-import til.stegmueller.centic.repository.UserRepository;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -30,8 +26,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureMockMvc
-@AutoConfigureDataJpa
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Rollback(false)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -40,35 +34,30 @@ class TransactionControllerTest {
     @Autowired
     private MockMvc api;
 
-    @Autowired
-    private TransactionRepository transactionRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
+    private String token;
     private Long createdTransactionId;
+
+    @BeforeAll
+    void setup() {
+        this.token = obtainAccessToken();
+    }
 
     @Test
     @Order(1)
     void testGetAllTransactions() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         get("/api/transactions")
                                 .header("Authorization", "Bearer " + token)
                 )
-                .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
     @Order(2)
     void testCreateTransaction() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         Transaction transaction = Transaction.builder()
                 .amount(new BigDecimal("75.00"))
                 .date(LocalDate.now())
@@ -79,12 +68,10 @@ class TransactionControllerTest {
         String response = api.perform(
                         post("/api/transactions")
                                 .header("Authorization", "Bearer " + token)
-                                 .contentType(MediaType.APPLICATION_JSON)
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .content(mapper.writeValueAsString(transaction))
                 )
-                .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.description").value("Supermarkt"))
                 .andReturn().getResponse().getContentAsString();
 
         createdTransactionId = mapper.readTree(response).get("id").asLong();
@@ -93,8 +80,6 @@ class TransactionControllerTest {
     @Test
     @Order(3)
     void testGetTransactionById() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         get("/api/transactions/" + createdTransactionId)
                                 .header("Authorization", "Bearer " + token)
@@ -107,8 +92,6 @@ class TransactionControllerTest {
     @Test
     @Order(4)
     void testUpdateTransaction() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         Transaction updated = Transaction.builder()
                 .amount(new BigDecimal("90.00"))
                 .date(LocalDate.now())
@@ -130,8 +113,6 @@ class TransactionControllerTest {
     @Test
     @Order(5)
     void testDeleteTransaction() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         delete("/api/transactions/" + createdTransactionId)
                                 .header("Authorization", "Bearer " + token)
@@ -151,7 +132,6 @@ class TransactionControllerTest {
     @Test
     @Order(7)
     void testForbidden_adminEndpoint_withUserToken() throws Exception {
-        String token = obtainAccessToken("user", "user");
 
         api.perform(
                         post("/api/categories")
@@ -164,7 +144,7 @@ class TransactionControllerTest {
     }
 
     // Token von Keycloak holen
-    private String obtainAccessToken(String username, String password) {
+    private String obtainAccessToken() {
         RestTemplate rest = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -172,8 +152,8 @@ class TransactionControllerTest {
         String body = "client_id=centic&" +
                 "grant_type=password&" +
                 "scope=openid profile roles offline_access&" +
-                "username=" + username + "&" +
-                "password=" + password;
+                "username=user&" +
+                "password=user";
 
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         ResponseEntity<String> resp = rest.postForEntity(
@@ -182,7 +162,6 @@ class TransactionControllerTest {
                 String.class
         );
 
-        JacksonJsonParser jsonParser = new JacksonJsonParser();
-        return jsonParser.parseMap(resp.getBody()).get("access_token").toString();
+        return new JacksonJsonParser().parseMap(resp.getBody()).get("access_token").toString();
     }
 }

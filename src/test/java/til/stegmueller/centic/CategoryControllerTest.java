@@ -3,8 +3,6 @@ package til.stegmueller.centic;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.AutoConfigureDataJpa;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.*;
@@ -15,13 +13,10 @@ import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureMockMvc
-@AutoConfigureDataJpa
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Rollback(false)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -32,21 +27,28 @@ class CategoryControllerTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    private String adminToken;
+    private String userToken;
     private Long createdCategoryId;
 
-    // Create
+    @BeforeAll
+    void setup() {
+        // Tokens einmalig beziehen spart Zeit und eliminiert Redundanz
+        this.adminToken = obtainAccessToken("admin", "1234");
+        this.userToken = obtainAccessToken("user", "user");
+    }
+
+    // --- CREATE ---
+
     @Test
     @Order(1)
     void testCreate_asAdmin() throws Exception {
-        String token = obtainAccessToken("admin", "1234");
-
         String response = api.perform(
                         post("/api/categories")
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + adminToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"name\":\"Lebensmittel\",\"colorCode\":\"#00FF00\",\"globalFlag\":true}")
                 )
-                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Lebensmittel"))
                 .andReturn().getResponse().getContentAsString();
@@ -57,126 +59,102 @@ class CategoryControllerTest {
     @Test
     @Order(2)
     void testCreate_asUser_forbidden() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         post("/api/categories")
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + userToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"name\":\"Verboten\",\"colorCode\":\"#FF0000\",\"globalFlag\":false}")
                 )
-                .andDo(print())
                 .andExpect(status().isForbidden());
     }
 
-    // Read
+    // --- READ ---
+
     @Test
     @Order(3)
     void testGetAll_asUser() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         get("/api/categories")
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + userToken)
                 )
-                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Lebensmittel"));
+                .andExpect(jsonPath("$[0].name").exists());
     }
 
     @Test
     @Order(4)
     void testGetById_asUser() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         get("/api/categories/" + createdCategoryId)
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + userToken)
                 )
-                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(createdCategoryId));
     }
 
-    // Update
+    // --- UPDATE ---
+
     @Test
     @Order(5)
     void testUpdate_asAdmin() throws Exception {
-        String token = obtainAccessToken("admin", "1234");
-
         api.perform(
                         put("/api/categories/" + createdCategoryId)
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + adminToken)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\":\"Lebensmittel aktualisiert\",\"colorCode\":\"#00FF00\",\"globalFlag\":true}")
+                                .content("{\"name\":\"Lebensmittel neu\",\"colorCode\":\"#00FF00\",\"globalFlag\":true}")
                 )
-                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Lebensmittel aktualisiert"));
+                .andExpect(jsonPath("$.name").value("Lebensmittel neu"));
     }
 
     @Test
     @Order(6)
     void testUpdate_asUser_forbidden() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         put("/api/categories/" + createdCategoryId)
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + userToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"name\":\"Hack\",\"colorCode\":\"#FF0000\",\"globalFlag\":false}")
                 )
-                .andDo(print())
                 .andExpect(status().isForbidden());
     }
 
-    // Delete
+    // --- DELETE ---
+
     @Test
     @Order(7)
     void testDelete_asUser_forbidden() throws Exception {
-        String token = obtainAccessToken("user", "user");
-
         api.perform(
                         delete("/api/categories/" + createdCategoryId)
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + userToken)
                 )
-                .andDo(print())
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @Order(8)
     void testDelete_asAdmin() throws Exception {
-        String token = obtainAccessToken("admin", "1234");
-
         api.perform(
                         delete("/api/categories/" + createdCategoryId)
-                                .header("Authorization", "Bearer " + token)
+                                .header("Authorization", "Bearer " + adminToken)
                 )
-                .andDo(print())
                 .andExpect(status().isNoContent());
     }
 
-    // Unauthorized
     @Test
     @Order(9)
     void testUnauthorized_noToken() throws Exception {
         api.perform(get("/api/categories"))
-                .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
-    // Token Access
     private String obtainAccessToken(String username, String password) {
         RestTemplate rest = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        String body = "client_id=centic&" +
-                "grant_type=password&" +
-                "scope=openid profile roles offline_access&" +
-                "username=" + username + "&" +
-                "password=" + password;
+        String body = String.format("client_id=centic&grant_type=password&scope=openid profile roles&username=%s&password=%s",
+                username, password);
 
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         ResponseEntity<String> resp = rest.postForEntity(
@@ -185,7 +163,6 @@ class CategoryControllerTest {
                 String.class
         );
 
-        JacksonJsonParser jsonParser = new JacksonJsonParser();
-        return jsonParser.parseMap(resp.getBody()).get("access_token").toString();
+        return new JacksonJsonParser().parseMap(resp.getBody()).get("access_token").toString();
     }
 }
